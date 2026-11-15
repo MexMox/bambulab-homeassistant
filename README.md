@@ -105,7 +105,7 @@ Status, Steuerung und Vorschau laufen bei allen Modellen über dieselben Schnitt
 
 ## Installation als Home-Assistant-Add-on
 
-[![Repository zu Home Assistant hinzufügen](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FDEIN-GITHUB-NAME%2Fbambu-p1s-homeassistant)
+[![Repository zu Home Assistant hinzufügen](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FMexMox%2Fbambulab-homeassistant)
 
 1. *Einstellungen → Add-ons → Add-on-Store → ⋮ (oben rechts) → Repositories* öffnen, diese URL einfügen und **Hinzufügen** klicken:
    ```
@@ -134,7 +134,7 @@ Für HA Container/Core oder wenn die Bridge auf einem eigenen Server laufen soll
 ### Variante A: systemd (Debian/Ubuntu, empfohlen)
 ```bash
 git clone https://github.com/MexMox/bambulab-homeassistant.git
-cd bambu-p1s-homeassistant/standalone
+cd bambulab-homeassistant/standalone
 sudo bash install.sh                       # installiert nach /opt/bambu-bridge (inkl. ffmpeg)
 sudo nano /opt/bambu-bridge/config.yaml    # Drucker + MQTT-Zugang eintragen
 sudo systemctl restart bambu-bridge
@@ -143,7 +143,7 @@ journalctl -u bambu-bridge -f              # Log ansehen
 
 ### Variante B: Docker Compose
 ```bash
-cd bambu-p1s-homeassistant/standalone
+cd bambulab-homeassistant/standalone
 cp config.example.yaml config.yaml && nano config.yaml
 docker compose up -d --build
 docker logs -f bambu-bridge
