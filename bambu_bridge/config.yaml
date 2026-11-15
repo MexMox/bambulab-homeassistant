@@ -1,5 +1,5 @@
 name: Bambu Lab Bridge
-version: "1.5.1"
+version: "1.5.2"
 slug: bambu_bridge
 description: >-
   Bambu-Lab-Drucker (P1, A1, X1, P2, H2) lokal mit Home Assistant verbinden –

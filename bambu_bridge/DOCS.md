@@ -6,7 +6,7 @@ Die ausführliche Anleitung mit allen Details steht in der README des Repository
 
 ## Voraussetzungen
 
-- **Mosquitto broker** (offizielles Add-on) installiert und gestartet, **MQTT**-Integration eingerichtet
+- **Mosquitto broker** (offizielle App) installiert und gestartet, **MQTT**-Integration eingerichtet
 - Am Drucker: **LAN-Modus** an. Für die Steuerung (Licht, Pause, Geschwindigkeit, Stopp) zusätzlich den **Developer Mode** aktivieren.
 - Feste IP für den Drucker (DHCP-Reservierung im Router)
 - Nur X1/H2/P2: am Drucker zusätzlich „LAN Mode Liveview“ aktivieren (Kamera über RTSPS)
@@ -35,7 +35,9 @@ Die ausführliche Anleitung mit allen Details steht in der README des Repository
   entity: sensor.bambu_p1s_status
   full_width: true          # optional
   ```
-  Die Karte wird bei jedem Add-on-Start automatisch aktualisiert. Wurde der Ordner `www` beim ersten Start neu angelegt, Home Assistant **einmal neu starten**.
+  Die Karte wird bei jedem Start der App automatisch aktualisiert.
+
+> ⚠️ **Beim ersten Start:** Gab es den Ordner `/config/www` noch nicht, legt die App ihn neu an und zeigt eine Benachrichtigung. Home Assistant dann **einmal neu starten** (*Einstellungen → System → ⏻ → Home Assistant neu starten*), sonst fehlt die Karte und `/local/bambu/bambu-printer-card.js` ist nicht erreichbar.
 
 ## Optionen pro Drucker
 
@@ -62,5 +64,5 @@ Die alte Bridge im LXC **vorher stoppen** (`systemctl disable --now bambu-bridge
 |---|---|
 | `Drucker hat Verbindung abgelehnt` | Access Code prüfen (ändert sich beim Aus-/Einschalten des LAN-Modus) |
 | Werte kommen an, Befehle wirken nicht | Developer Mode am Drucker aktivieren |
-| `Kein MQTT-Dienst gefunden` | Mosquitto-Add-on installieren und starten |
+| `Kein MQTT-Dienst gefunden` | Mosquitto-App installieren und starten |
 | Karte „Custom element doesn't exist“ | HA einmal neu starten, Browser neu laden (Strg+F5) |

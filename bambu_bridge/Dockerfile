@@ -18,6 +18,6 @@ RUN chmod a+x /run.sh
 
 LABEL io.hass.type="app" \
       io.hass.name="Bambu Lab Bridge" \
-      org.opencontainers.image.source="https://github.com/MexMox/bambulab-homeassistant"
+      org.opencontainers.image.source="https://github.com/mexmox/bambulab-homeassistant"
 
 CMD ["/run.sh"]

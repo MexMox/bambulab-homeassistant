@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.2
+- Legt die App den Ordner `/config/www` neu an, erscheint in Home Assistant eine Benachrichtigung „bitte neu starten“ (sonst fehlt die Karte)
+- Doku: Begriff „Apps“ statt „Add-ons“ (HA 2026.2), Hinweis auf App-Store statt Marketplace, Neustart-Hinweis als eigener Warnkasten
+
 ## 1.5.1
 - Installation repariert: neues offizielles Basis-Image `ghcr.io/home-assistant/base` (aktuelles Alpine), `build.yaml` entfernt (von Home Assistant abgelöst)
 

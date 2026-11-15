@@ -92,6 +92,7 @@ class Environment:
         self.stop = threading.Event()
         self.resources = [{"id": "alt", "type": "module", "url": "/local/bambu/bambu-printer-card.js?v=alt"}]
         self.ftp_server = None
+        self.notifications: list[dict] = []
 
     # ---- Grundlagen
     def certs(self):
@@ -168,6 +169,8 @@ class Environment:
                             r["url"] = m["url"]
                 elif m["type"] == "lovelace/resources/create":
                     env.resources.append({"id": f"n{len(env.resources)}", "type": m["res_type"], "url": m["url"]})
+                elif m["type"] == "call_service":
+                    env.notifications.append(m)
                 await ws.send(json.dumps({"id": m["id"], "type": "result", "success": True, "result": result}))
 
         async def main():
@@ -395,6 +398,11 @@ def run_scenario(env: Environment, kind: str):
 
         card = ha_dir / "www" / "bambu" / "bambu-printer-card.js"
         check(kind, "Dashboard-Karte nach /config/www/bambu kopiert", card.is_file())
+        check(kind, "Neuer www-Ordner → Benachrichtigung 'Home Assistant neu starten'",
+              any(n.get("domain") == "persistent_notification"
+                  and n.get("service_data", {}).get("notification_id") == "bambu_bridge_restart"
+                  for n in env.notifications))
+        env.notifications.clear()
         urls = [r["url"] for r in env.resources]
         check(kind, "Lovelace-Ressource aktualisiert (kein Duplikat)",
               sum("bambu-printer-card.js" in u for u in urls) == 1 and not any(u.endswith("v=alt") for u in urls), str(urls))

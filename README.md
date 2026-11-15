@@ -18,8 +18,8 @@
 2. [Unterstützte Drucker](#unterstützte-drucker)
 3. [So funktioniert es](#so-funktioniert-es)
 4. [Voraussetzungen](#voraussetzungen)
-5. [Installation als Home-Assistant-Add-on](#installation-als-home-assistant-add-on)
-6. [Installation ohne Add-on (LXC, VM, Docker)](#installation-ohne-add-on-lxc-vm-docker)
+5. [Installation als Home-Assistant-App](#installation-als-home-assistant-app)
+6. [Installation ohne App (LXC, VM, Docker)](#installation-ohne-app-lxc-vm-docker)
 7. [Konfiguration](#konfiguration)
 8. [Entitäten in Home Assistant](#entitäten-in-home-assistant)
 9. [Dashboard-Karte](#dashboard-karte)
@@ -47,7 +47,7 @@
 - **Eigene Dashboard-Karte** (`custom:bambu-printer-card`): passt sich hellem und dunklem Theme an, funktioniert auf Handy und Tablet, optional über die volle Breite
 - **Dashboard in der Seitenleiste** (Ingress), ohne Token-Einrichtung
 - **Mehrere Drucker** gleichzeitig
-- **Automatische Einrichtung:** MQTT Discovery legt alle Entitäten selbst an. Das Add-on installiert die Karte und trägt sie als Dashboard-Ressource ein.
+- **Automatische Einrichtung:** MQTT Discovery legt alle Entitäten selbst an. Die App installiert die Karte und trägt sie als Dashboard-Ressource ein.
 - **100 % lokal:** Die Kommunikation läuft direkt im LAN, ohne Bambu-Cloud
 
 ## Unterstützte Drucker
@@ -71,7 +71,7 @@ Status, Steuerung und Vorschau laufen bei allen Modellen über dieselben Schnitt
                  LAN (lokal, verschlüsselt)
  ┌──────────────┐  MQTT  :8883  ┌──────────────────┐  MQTT  ┌───────────────┐
  │ Bambu-Drucker│◄────────────► │  Bambu Bridge    │◄──────►│   Mosquitto   │
- │              │  FTPS  :990   │  (Add-on / LXC)  │        │   (Broker)    │
+ │              │  FTPS  :990   │   (App / LXC)    │        │   (Broker)    │
  │              │──────────────►│                  │        └───────┬───────┘
  │              │  Kamera       │ • Status → JSON  │                │ Discovery
  │              │  :6000 / :322 │ • Kamera → JPEG  │        ┌───────▼───────┐
@@ -99,19 +99,21 @@ Status, Steuerung und Vorschau laufen bei allen Modellen über dieselben Schnitt
 5. Nur **X1/H2/P2:** zusätzlich **„LAN Mode Liveview“** bzw. „LAN Only Liveview“ aktivieren, sonst gibt es kein Kamerabild.
 
 **In Home Assistant:**
-- Das Add-on **Mosquitto broker** installieren und starten. Die Integration **MQTT** muss eingerichtet sein.
-- Für das Add-on: **Home Assistant OS** oder **Supervised**. Läuft HA als *Container* oder *Core*, nimm die [Variante ohne Add-on](#installation-ohne-add-on-lxc-vm-docker).
+- Die App **Mosquitto broker** installieren und starten. Die Integration **MQTT** muss eingerichtet sein.
+- Für die App: **Home Assistant OS** oder **Supervised**. Läuft HA als *Container* oder *Core*, nimm die [Variante ohne App](#installation-ohne-app-lxc-vm-docker).
 - Ab HA **2025.10** funktioniert alles ohne weitere Einstellung. Ältere Versionen siehe `legacy_object_id`.
 
-## Installation als Home-Assistant-Add-on
+## Installation als Home-Assistant-App
+
+> Seit Home Assistant 2026.2 heißen Add-ons **Apps**. Die Bridge ist eine App und wird über den **App-Store** installiert. Der **Marketplace** (früher HACS) kann keine Apps installieren und meldet dann *„enthält Apps, der Marketplace installiert jedoch keine Apps“*.
 
 [![Repository zu Home Assistant hinzufügen](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FMexMox%2Fbambulab-homeassistant)
 
-1. *Einstellungen → Add-ons → Add-on-Store → ⋮ (oben rechts) → Repositories* öffnen, diese URL einfügen und **Hinzufügen** klicken:
+1. *Einstellungen → Apps → App-Store → ⋮ (oben rechts) → Repositories* öffnen, diese URL einfügen und **Hinzufügen** klicken:
    ```
    https://github.com/MexMox/bambulab-homeassistant
    ```
-2. **„Bambu Lab Bridge“** öffnen und **Installieren** klicken. Der erste Build dauert ein paar Minuten.
+2. **„Bambu Lab Bridge“** öffnen und **Installieren** klicken. Der erste Build dauert ein paar Minuten. In der Zeit nicht erneut klicken, sonst meldet HA *„Another job is running“* bzw. *„already installed“*.
 3. Im Tab **Konfiguration** den Drucker eintragen: `model`, `host` (IP), `serial`, `access_code`. Dann **Speichern**.
 4. **Starten** klicken. Im Tab **Protokoll** sollte erscheinen:
    ```
@@ -121,13 +123,18 @@ Status, Steuerung und Vorschau laufen bei allen Modellen über dieselben Schnitt
    [P1S] Kamera verbunden (chamber)
    ```
 5. Unter *Einstellungen → Geräte & Dienste → MQTT* steht jetzt das Gerät **„Bambu P1S“**.
-6. Hat das Add-on den Ordner `www` neu angelegt (Hinweis im Protokoll), Home Assistant **einmal neu starten**.
+
+> ⚠️ **Wichtig: Home Assistant beim ersten Mal neu starten, wenn der Ordner `www` neu ist**
+>
+> Die App legt die Dashboard-Karte im Ordner `/config/www/bambu/` ab. Gab es den Ordner `/config/www` vorher noch nicht, legt die App ihn neu an. Home Assistant liefert ihn aber **erst nach einem Neustart** aus. Bis dahin fehlt die Karte, und `<deine-HA-Adresse>/local/bambu/bambu-printer-card.js` ist nicht erreichbar. Gemeint ist die Adresse, unter der du Home Assistant im Browser öffnest, z. B. `http://homeassistant.local:8123`, `http://192.168.1.10:8123` oder bei Reverse Proxy bzw. Nabu Casa deine Domain ohne Port.
+>
+> Die App zeigt in diesem Fall eine **Benachrichtigung** in Home Assistant an. Dann: *Einstellungen → System → ⏻ (oben rechts) → Home Assistant neu starten* und danach den Browser mit **Strg+F5** neu laden. Das ist **nur einmal** nötig.
 
 Optional: Im Tab *Info* die Option **„In Seitenleiste anzeigen“** aktivieren. Dann erscheint der Menüpunkt **„3D-Drucker“**.
 
 **Updates:** Sobald es eine neue Version gibt, zeigt Home Assistant das Update an. Die Karte wird dabei automatisch mitaktualisiert.
 
-## Installation ohne Add-on (LXC, VM, Docker)
+## Installation ohne App (LXC, VM, Docker)
 
 Für HA Container/Core oder wenn die Bridge auf einem eigenen Server laufen soll, z. B. in einem Proxmox-LXC.
 
@@ -158,14 +165,14 @@ docker logs -f bambu-bridge
 
 ## Konfiguration
 
-### Add-on-Optionen
+### App-Optionen
 
 | Option | Standard | Beschreibung |
 |---|---|---|
 | `log_level` | `info` | `debug`, `info`, `warning`, `error` |
 | `install_card` | `true` | Karte nach `/config/www/bambu/` kopieren und als Ressource eintragen |
 | `printers` | – | Liste der Drucker (siehe unten) |
-| `mqtt_host`, `mqtt_port`, `mqtt_username`, `mqtt_password` | leer | Nur nötig, wenn **nicht** das Mosquitto-Add-on genutzt wird |
+| `mqtt_host`, `mqtt_port`, `mqtt_username`, `mqtt_password` | leer | Nur nötig, wenn **nicht** die Mosquitto-App genutzt wird |
 
 ### Optionen je Drucker
 
@@ -241,7 +248,7 @@ Vorschau und letzter Druck bleiben **verfügbar, wenn der Drucker aus ist**. Sie
 
 ## Dashboard-Karte
 
-Das Add-on richtet die Karte automatisch ein. Im Dashboard: *Bearbeiten → Karte hinzufügen → „MexMox Bambu Drucker“*, oder per YAML:
+Die App richtet die Karte automatisch ein. Im Dashboard: *Bearbeiten → Karte hinzufügen → „MexMox Bambu Drucker“*, oder per YAML:
 
 ```yaml
 type: custom:bambu-printer-card
@@ -273,7 +280,7 @@ Ab 620 px Breite ist die Karte zweispaltig, ab 1100 px schaltet sie auf ein brei
 
 ## Dashboard in der Seitenleiste
 
-Das Add-on bringt eine eigenständige Dashboard-Seite mit. Sie erscheint als Menüpunkt **„3D-Drucker“** (Option „In Seitenleiste anzeigen“) und zeigt alle Drucker untereinander. Die Anmeldung übernimmt Home Assistant.
+Die App bringt eine eigenständige Dashboard-Seite mit. Sie erscheint als Menüpunkt **„3D-Drucker“** (Option „In Seitenleiste anzeigen“) und zeigt alle Drucker untereinander. Die Anmeldung übernimmt Home Assistant.
 
 **In der Standalone-Variante:** `bambu_bridge/www/index.html` nach `/config/www/bambu/` kopieren und als Dashboard vom Typ **Webseite** mit der URL `/local/bambu/index.html` anlegen. Auf einem Tablet ohne HA-Sitzung trägst du über das ⚙️-Symbol die HA-URL und einen langlebigen Zugriffstoken ein.
 
@@ -369,7 +376,7 @@ actions:
 ## Sicherheit und Datenschutz
 
 - Alle Verbindungen zum Drucker laufen **lokal und verschlüsselt** (TLS). Es gehen keine Daten in die Cloud.
-- Der Access Code steht nur im Add-on-Formular bzw. in deiner lokalen `config.yaml`. Die erzeugte Konfiguration ist nur für den Dienst lesbar.
+- Der Access Code steht nur im Formular der App bzw. in deiner lokalen `config.yaml`. Die erzeugte Konfiguration ist nur für den Dienst lesbar.
 - Das Dashboard in der Seitenleiste nimmt nur Anfragen vom Supervisor-Proxy an (Ingress). Ein offener Port entsteht dabei nicht.
 - Der optionale HTTP-Server der Standalone-Variante (`http.enabled`) hat **keine Anmeldung**. Schalte ihn nur in vertrauenswürdigen Netzen ein.
 - Rohe G-Code-Befehle sind standardmäßig gesperrt (`allow_gcode: false`).
@@ -383,13 +390,13 @@ actions:
 | Werte kommen an, Befehle wirken nicht | **Developer Mode** am Drucker einschalten |
 | `Kamera (RTSPS): … 401 Unauthorized` | Access Code prüfen |
 | `Kamera (RTSPS): Connection refused` | X1/H2/P2: **LAN-Live-Ansicht** am Drucker einschalten |
-| `ffmpeg nicht gefunden` | Standalone: `apt install ffmpeg`. Im Add-on ist ffmpeg schon enthalten |
+| `ffmpeg nicht gefunden` | Standalone: `apt install ffmpeg`. In der App ist ffmpeg schon enthalten |
 | Kein Kamerabild beim P1/A1 | Port 6000 erreichbar? Es gehen nur wenige Kamera-Verbindungen gleichzeitig, also Bambu Studio bzw. Handy-App schließen |
 | `Druckdatei für die Vorschau nicht gefunden` | Druck direkt von SD-Karte ohne 3MF oder aus der Cloud gestartet. Die Karte zeigt dann das Foto |
 | Gerät erscheint nicht in HA | MQTT-Integration eingerichtet? Unter *MQTT → Konfigurieren → Topic `bambu/#` anhören* prüfen, ob Daten ankommen |
 | `extra keys not allowed … default_entity_id` | HA älter als 2025.10. Standalone: `legacy_object_id: true` unter `homeassistant:` setzen |
 | Karte: „Custom element doesn't exist“ | HA einmal neu starten, Browser mit Strg+F5 neu laden, in der App den Frontend-Cache leeren |
-| Karte zeigt eine alte Version | Ressourcen-URL mit neuer Nummer `?v=…` versehen (das Add-on macht das automatisch) |
+| Karte zeigt eine alte Version | Ressourcen-URL mit neuer Nummer `?v=…` versehen (die App macht das automatisch) |
 
 **Ausführliches Protokoll:** `log_level: debug` setzen. Dann erscheint jeder Befehl an den Drucker im Log.
 
@@ -412,25 +419,25 @@ Ja, dann aber nur lesend: Status, Kamera, AMS, Vorschau und letzter Druck. Steue
 **Kann ich mehrere Drucker anbinden?**
 Ja. Lege in der Liste `printers` weitere Einträge an, jeweils mit eigenem Namen.
 
-**Was passiert bei einem Update von Home Assistant oder des Add-ons?**
+**Was passiert bei einem Update von Home Assistant oder der App?**
 Die Entitäts-IDs bleiben gleich. Vorschau und letzter Druck sind gespeichert, die Karte wird automatisch aktualisiert.
 
-**Vom LXC zum Add-on wechseln?**
-Die alte Bridge stoppen (`systemctl disable --now bambu-bridge`) und das Add-on mit demselben Druckernamen einrichten. Entitäten, Karten und Automationen bleiben erhalten.
+**Vom LXC zur App wechseln?**
+Die alte Bridge stoppen (`systemctl disable --now bambu-bridge`) und die App mit demselben Druckernamen einrichten. Entitäten, Karten und Automationen bleiben erhalten.
 
 **Ist das eine HACS-Integration?**
-Nein. Es ist ein eigenständiges Add-on bzw. ein eigener Dienst und nutzt nur Bordmittel von Home Assistant (MQTT Discovery).
+Nein. Es ist eine eigenständige App bzw. ein eigener Dienst und nutzt nur Bordmittel von Home Assistant (MQTT Discovery).
 
 ## Entwicklung und Tests
 
 ```
-repository.yaml               Add-on-Repository für Home Assistant
-bambu_bridge/                 Add-on
+repository.yaml               App-Repository für Home Assistant
+bambu_bridge/                 App
   bridge.py                   Bridge: Drucker ⇄ MQTT, Kamera, FTPS, HTTP
   addon_launcher.py           Starter: Formular → Konfiguration, Karte installieren
   www/bambu-printer-card.js   Lovelace-Karte
   www/index.html              Dashboard (Seitenleiste / eigenständig)
-  config.yaml, Dockerfile …   Add-on-Definition
+  config.yaml, Dockerfile …   App-Definition
 standalone/                   Variante für LXC/VM/Docker
 tests/                        Unit- und Integrationstests
 docs/images/                  Screenshots
@@ -449,10 +456,10 @@ Die Unit-Tests prüfen:
 - **3D-Vorschau:** Auslesen der 3MF und Suche der Datei auf dem Drucker
 - **MQTT Discovery:** je Modell, auch im Legacy-Modus
 - **HTTP/Ingress:** Auslieferung des Dashboards und Zugriffsbeschränkung
-- **Konfiguration:** Prüfung der Konfiguration und des Add-on-Formulars
+- **Konfiguration:** Prüfung der Konfiguration und des App-Formulars
 
-### Integrationstest (42 Prüfungen, echte Prozesse)
-Der Integrationstest startet Mosquitto (als Drucker- und als HA-Broker), einen FTPS-Server, die Kamera (P1-Protokoll bzw. RTSPS über mediamtx), einen simulierten Supervisor und die Bridge über den Add-on-Starter. Danach prüft er den kompletten Ablauf für **P1S** und **X1C**: Verbindung, Discovery, Kamera, Vorschau, Ingress, Karten-Ressource, Befehle, Druckende und sauberes Beenden.
+### Integrationstest (44 Prüfungen, echte Prozesse)
+Der Integrationstest startet Mosquitto (als Drucker- und als HA-Broker), einen FTPS-Server, die Kamera (P1-Protokoll bzw. RTSPS über mediamtx), einen simulierten Supervisor und die Bridge über den Starter der App. Danach prüft er den kompletten Ablauf für **P1S** und **X1C**: Verbindung, Discovery, Kamera, Vorschau, Ingress, Karten-Ressource, Befehle, Druckende und sauberes Beenden.
 
 ```bash
 # Voraussetzungen (Debian/Ubuntu): mosquitto, openssl, ffmpeg, mediamtx v1.9.x

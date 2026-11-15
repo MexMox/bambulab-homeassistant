@@ -66,21 +66,52 @@ def ws_call(ws, msg_id: int, payload: dict) -> dict:
             return msg
 
 
-def register_resource(url: str) -> None:
+def _connect_core():
+    """WebSocket zur Home-Assistant-API über den Supervisor-Proxy (None ohne Token/Anmeldung)."""
     token = os.environ.get("SUPERVISOR_TOKEN")
     if not token:
-        log.warning("Kein SUPERVISOR_TOKEN – Ressource bitte manuell eintragen: %s (JavaScript-Modul)", url)
-        return
+        return None
     import websocket  # websocket-client
 
     ws = websocket.create_connection(CORE_WS, timeout=15)
+    json.loads(ws.recv())  # auth_required
+    ws.send(json.dumps({"type": "auth", "access_token": token}))
+    if json.loads(ws.recv()).get("type") != "auth_ok":
+        ws.close()
+        return None
+    return ws
+
+
+def notify_restart() -> None:
+    """Hinweis in HA: neu angelegter www-Ordner wird erst nach einem Neustart unter /local/ ausgeliefert."""
     try:
-        json.loads(ws.recv())  # auth_required
-        ws.send(json.dumps({"type": "auth", "access_token": token}))
-        auth = json.loads(ws.recv())
-        if auth.get("type") != "auth_ok":
-            log.warning("Anmeldung an Home Assistant fehlgeschlagen – Ressource bitte manuell eintragen: %s", url)
+        ws = _connect_core()
+        if not ws:
             return
+        try:
+            ws_call(ws, 1, {"type": "call_service", "domain": "persistent_notification", "service": "create",
+                            "service_data": {
+                                "notification_id": "bambu_bridge_restart",
+                                "title": "Bambu Lab Bridge: bitte Home Assistant neu starten",
+                                "message": ("Die App hat den Ordner `/config/www` neu angelegt. Home Assistant liefert "
+                                            "ihn erst nach einem **Neustart** aus – vorher fehlt die Dashboard-Karte "
+                                            "„MexMox Bambu Drucker“.\n\n*Einstellungen → System → ⏻ → Home Assistant "
+                                            "neu starten.* Das ist nur einmal nötig."),
+                            }})
+            log.info("Hinweis 'Home Assistant neu starten' in Home Assistant angezeigt")
+        finally:
+            ws.close()
+    except Exception as exc:  # noqa: BLE001 – nur ein Hinweis
+        log.debug("Benachrichtigung nicht möglich: %s", exc)
+
+
+def register_resource(url: str) -> None:
+    ws = _connect_core()
+    if not ws:
+        log.warning("Keine Verbindung zur Home-Assistant-API – Ressource bitte manuell eintragen: %s "
+                    "(JavaScript-Modul)", url)
+        return
+    try:
         res = ws_call(ws, 1, {"type": "lovelace/resources"})
         if not res.get("success"):
             log.warning("Ressourcen nicht lesbar (Dashboards im YAML-Modus?) – bitte manuell eintragen: %s", url)
@@ -123,6 +154,7 @@ def install_card() -> None:
     if www_created:
         log.warning("Ordner 'www' wurde neu angelegt – Home Assistant EINMAL neu starten, "
                     "damit die Karte unter /local/ erreichbar ist.")
+        notify_restart()
 
 
 def main() -> None:
