@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.1
+- Installation repariert: neues offizielles Basis-Image `ghcr.io/home-assistant/base` (aktuelles Alpine), `build.yaml` entfernt (von Home Assistant abgelöst)
+
 ## 1.5.0
 - **Alle Bambu-Lab-Serien:** P1 (P1S, P1P), A1 (A1, A1 mini), X1 (X1, X1C, X1E), P2S, H2 (H2S, H2D, H2D Pro, H2C)
 - Kamera der X1/H2/P2-Serie per RTSPS (Port 322, ffmpeg ist im Add-on enthalten)
