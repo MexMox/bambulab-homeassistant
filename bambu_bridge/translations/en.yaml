@@ -1,0 +1,22 @@
+configuration:
+  log_level:
+    name: Log level
+    description: Log verbosity. "debug" shows every command sent to the printer.
+  install_card:
+    name: Install dashboard card automatically
+    description: Copies the card to /config/www/bambu and registers it as a dashboard resource.
+  printers:
+    name: Printers
+    description: >-
+      Per printer: name, model (P1S, P1P, A1, A1MINI, X1, X1C, X1E, P2S, H2S, H2D, H2DPRO, H2C, OTHER),
+      host (static IP), serial and access_code. Optional: camera, camera_mode (auto/chamber/rtsp),
+      preview, last_print_light, last_print_delay, camera_interval, pushall_interval, allow_gcode.
+  mqtt_host:
+    name: MQTT host (optional)
+    description: Only needed if you don't use the Mosquitto add-on.
+  mqtt_port:
+    name: MQTT port (optional)
+  mqtt_username:
+    name: MQTT username (optional)
+  mqtt_password:
+    name: MQTT password (optional)

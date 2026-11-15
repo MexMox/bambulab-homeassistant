@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>MexMox · 3D-Drucker</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+  --text:#e8eaf0; --muted:#8b93a5; --accent:#22c55e; --accent2:#16a34a;
+  --warn:#f59e0b; --err:#ef4444; --info:#3b82f6; --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(15,17,21,.92);backdrop-filter:blur(8px);z-index:5}
+header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:.2px}
+header h1 span{color:var(--accent)}
+.conn{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.dot.ok{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.dot.bad{background:var(--err)}
+.iconbtn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--panel2)}
+.iconbtn:hover{background:var(--line)}
+main{padding:20px;display:grid;gap:20px;max-width:1500px;margin:0 auto}
+.empty{color:var(--muted);text-align:center;padding:60px 20px;border:1px dashed var(--line);border-radius:var(--radius)}
+.empty b{color:var(--text)}
+
+.printer{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.p-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.p-head h2{margin:0;font-size:17px}
+.p-head .model{color:var(--muted);font-size:13px}
+.pill{padding:4px 11px;border-radius:999px;font-size:12.5px;font-weight:600;background:var(--panel2);color:var(--muted)}
+.pill.run{background:rgba(34,197,94,.15);color:var(--accent)}
+.pill.pause{background:rgba(245,158,11,.15);color:var(--warn)}
+.pill.err{background:rgba(239,68,68,.15);color:var(--err)}
+.pill.done{background:rgba(59,130,246,.15);color:var(--info)}
+.p-head .meta{margin-left:auto;color:var(--muted);font-size:12.5px;display:flex;gap:14px}
+.p-body{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:0}
+@media (max-width:900px){.p-body{grid-template-columns:1fr}}
+
+.cam{position:relative;background:#000;aspect-ratio:16/9;display:grid;place-items:center;overflow:hidden}
+.cam img{width:100%;height:100%;object-fit:contain;display:none}
+.cam img.on{display:block}
+.cam .noimg{color:var(--muted);font-size:14px}
+.cam .ovl{position:absolute;right:10px;bottom:10px;display:flex;gap:8px}
+.cam .ovl button{background:rgba(0,0,0,.6);backdrop-filter:blur(4px);padding:7px 11px;border-radius:10px;font-size:13px}
+.cam .ovl button.lit{color:#fde047}
+.cam .age{position:absolute;left:10px;bottom:10px;font-size:11.5px;color:#cbd5e1;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:8px}
+
+.side{padding:18px;display:grid;gap:16px;align-content:start}
+.job{display:flex;gap:18px;align-items:center}
+.ring{position:relative;width:118px;height:118px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .val{position:absolute;inset:0;display:grid;place-items:center;font-size:26px;font-weight:700}
+.ring .val small{font-size:13px;color:var(--muted);font-weight:500}
+.jobinfo{min-width:0;display:grid;gap:6px}
+.file{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kv{display:flex;gap:6px;color:var(--muted);font-size:13.5px}
+.kv b{color:var(--text);font-weight:600}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.tile{background:var(--panel2);border-radius:12px;padding:11px 13px}
+.tile .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.tile .big{font-size:22px;font-weight:700;margin-top:2px}
+.tile .big small{font-size:13px;color:var(--muted);font-weight:500}
+.tile.hot .big{color:#fb923c}
+.nz{display:block;font-size:18px;line-height:1.3;white-space:nowrap}
+.nz small{font-size:11px;color:var(--muted);font-weight:600;margin-right:4px}
+
+.fans{display:grid;gap:7px}
+.fan{display:grid;grid-template-columns:110px 1fr 42px;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.bar{height:7px;background:var(--panel2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--info);border-radius:99px;transition:width .5s}
+.fan span:last-child{text-align:right;color:var(--text)}
+
+.controls{display:grid;gap:10px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);background:var(--panel2);border-radius:12px;padding:4px;gap:4px}
+.seg button{padding:8px 4px;border-radius:9px;font-size:13px;color:var(--muted)}
+.seg button.on{background:var(--accent);color:#04120a;font-weight:650}
+.seg button:disabled:not(.on){opacity:.4;cursor:default}
+.btns{display:grid;grid-template-columns:1fr 1fr auto;gap:10px}
+.btn{padding:11px 12px;border-radius:12px;background:var(--panel2);font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn:hover:not(:disabled){background:var(--line)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--accent);color:#04120a}
+.btn.primary:hover:not(:disabled){background:var(--accent2)}
+.btn.danger{background:rgba(239,68,68,.15);color:var(--err)}
+.btn.danger.confirm{background:var(--err);color:#fff}
+
+.section{padding:16px 18px;border-top:1px solid var(--line)}
+.section h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);display:flex;gap:10px;align-items:center}
+.section h3 .sub{text-transform:none;letter-spacing:0;font-weight:500}
+.ams{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.slot{background:var(--panel2);border-radius:12px;padding:12px;display:grid;grid-template-columns:auto 1fr;gap:4px 11px;align-items:center;border:2px solid transparent}
+.slot.active{border-color:var(--accent)}
+.sw{width:34px;height:34px;flex:none;align-self:center;border-radius:50%;grid-row:1/3;border:2px solid rgba(255,255,255,.15)}
+.sw.none{background:repeating-linear-gradient(45deg,transparent 0 4px,var(--line) 4px 8px);border-style:dashed}
+.slot .t{font-weight:650;font-size:14px}
+.slot .b{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot .bar{grid-column:span 2;margin-top:6px}
+.slot .bar i{background:var(--accent)}
+.hms{display:grid;gap:8px}
+.hms a{display:flex;gap:10px;align-items:center;padding:10px 12px;background:rgba(239,68,68,.1);color:#fca5a5;border-radius:10px;text-decoration:none;font-size:13.5px}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:20;padding:20px}
+.modal.open{display:grid}
+.dialog{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;width:min(460px,100%);display:grid;gap:14px}
+.dialog h2{margin:0;font-size:18px}
+.dialog p{margin:0;color:var(--muted);font-size:13.5px}
+.dialog label{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.dialog input{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font:inherit}
+.dialog .row{display:flex;gap:10px;justify-content:flex-end}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;opacity:0;transition:.25s;z-index:30;font-size:14px;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.toast.err{border-color:var(--err);color:#fca5a5}
+.offline .p-body,.offline .section{opacity:.45}
+</style>
+</head>
+<body>
+<header>
+  <h1>Mex<span>Mox</span> · 3D-Drucker</h1>
+  <div class="conn"><span class="dot" id="connDot"></span><span id="connText">Verbinde …</span></div>
+  <button class="iconbtn" id="btnSettings" title="Einstellungen" aria-label="Einstellungen">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<main id="main">
+  <div class="empty" id="empty">Warte auf Daten der <b>Bambu Bridge</b> …<br><small>Läuft die Bridge und ist sie mit dem HA-Broker verbunden?</small></div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="dialog">
+    <h2>Verbindung zu Home Assistant</h2>
+    <p>Wird das Dashboard aus Home Assistant geöffnet (<code>/local/…</code>), ist nichts nötig – die HA-Anmeldung wird übernommen. Für Tablets/Wandanzeigen einen <b>Langlebigen Zugriffstoken</b> eintragen (HA → Profil → Sicherheit).</p>
+    <label>Home-Assistant-URL<input id="inUrl" placeholder="http://homeassistant.local:8123"></label>
+    <label>Langlebiger Zugriffstoken (optional)<input id="inToken" type="password" placeholder="eyJ…"></label>
+    <div class="row">
+      <button class="btn" id="btnCancel">Abbrechen</button>
+      <button class="btn primary" id="btnSave">Speichern &amp; verbinden</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+const LS = { url: 'bambuDash.url', token: 'bambuDash.token' };
+const CAM_REFRESH_MS = 2000;
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch {} };
+
+const entities = {};          // entity_id -> {state, attributes}
+const cards = {};             // serial -> {el, data, cameraId, available}
+const statusToSerial = {};    // status entity -> serial (bleibt bei "unavailable" erhalten)
+let ws = null, msgId = 0, pending = {}, reconnectDelay = 2000, renderQueued = false;
+
+// ------------------------------------------------------------------ connection
+const hassUrl = () => (lsGet(LS.url) || location.origin).replace(/\/$/, '');
+
+async function getToken() {
+  const ll = lsGet(LS.token);
+  if (ll) return ll;
+  // 1) Eingebettet in HA (Webseiten-Dashboard / iframe): Sitzung des HA-Frontends nutzen
+  try {
+    if (window.parent !== window && window.parent.hassConnection) {
+      const { auth } = await window.parent.hassConnection;
+      if (auth.expired) await auth.refreshAccessToken();
+      return auth.accessToken;
+    }
+  } catch {}
+  // 2) Gleicher Origin wie HA: gespeicherte HA-Tokens verwenden
+  try {
+    const raw = lsGet('hassTokens');
+    if (raw && hassUrl() === location.origin) {
+      const t = JSON.parse(raw);
+      if (t.access_token && t.expires && Date.now() < t.expires - 30000) return t.access_token;
+      if (t.refresh_token && t.clientId) {
+        const r = await fetch(hassUrl() + '/auth/token', { method: 'POST',
+          body: new URLSearchParams({ grant_type: 'refresh_token', client_id: t.clientId, refresh_token: t.refresh_token }) });
+        if (r.ok) {
+          const n = await r.json();
+          t.access_token = n.access_token; t.expires = Date.now() + n.expires_in * 1000;
+          lsSet('hassTokens', JSON.stringify(t));
+          return t.access_token;
+        }
+      }
+    }
+  } catch {}
+  return null;
+}
+
+function setConn(state, text) {
+  $('#connDot').className = 'dot ' + (state === 'ok' ? 'ok' : state === 'bad' ? 'bad' : '');
+  $('#connText').textContent = text;
+}
+
+async function connect() {
+  const token = await getToken();
+  if (!token) { setConn('bad', 'Kein Zugang'); openSettings(); return; }
+  const url = hassUrl().replace(/^http/, 'ws') + '/api/websocket';
+  setConn('', 'Verbinde …');
+  try { ws = new WebSocket(url); } catch (e) { setConn('bad', 'Ungültige URL'); return; }
+  ws.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if (m.type === 'auth_required') ws.send(JSON.stringify({ type: 'auth', access_token: token }));
+    else if (m.type === 'auth_invalid') { setConn('bad', 'Token ungültig'); lsSet(LS.token, ''); ws.onclose = null; ws.close(); openSettings(); }
+    else if (m.type === 'auth_ok') {
+      reconnectDelay = 2000; setConn('ok', 'Verbunden');
+      send({ type: 'subscribe_entities' }, 'entities');
+    } else if (m.type === 'event' && pending[m.id] === 'entities') onEntities(m.event);
+    else if (m.type === 'result' && typeof pending[m.id] === 'function') { pending[m.id](m); delete pending[m.id]; }
+  };
+  ws.onclose = () => {
+    setConn('bad', 'Getrennt – neuer Versuch …');
+    Object.values(pending).forEach(p => typeof p === 'function' && p({ success: false, error: { message: 'Verbindung getrennt' } }));
+    pending = {};
+    setTimeout(connect, reconnectDelay); reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+  };
+}
+
+function send(msg, handler) {
+  const id = ++msgId; msg.id = id;
+  if (handler) pending[id] = handler;
+  ws.send(JSON.stringify(msg));
+  return id;
+}
+function callService(domain, service, data) {
+  return new Promise(resolve => {
+    if (!ws || ws.readyState !== 1) return resolve({ success: false, error: { message: 'Nicht verbunden' } });
+    send({ type: 'call_service', domain, service, service_data: data }, resolve);
+  });
+}
+
+function onEntities(ev) {
+  if (ev.a) for (const [id, v] of Object.entries(ev.a)) entities[id] = { state: v.s, attributes: { ...(v.a || {}) } };
+  if (ev.c) for (const [id, ch] of Object.entries(ev.c)) {
+    const e = entities[id]; if (!e) continue;
+    if (ch['+']) { if ('s' in ch['+']) e.state = ch['+'].s; if (ch['+'].a) Object.assign(e.attributes, ch['+'].a); }
+    if (ch['-'] && ch['-'].a) for (const k of ch['-'].a) delete e.attributes[k];
+  }
+  if (ev.r) for (const id of ev.r) delete entities[id];
+  queueRender();
+}
+
+// ------------------------------------------------------------------ commands
+function toast(text, isErr) {
+  const t = $('#toast'); t.textContent = text; t.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(t._h); t._h = setTimeout(() => t.className = 'toast', 2600);
+}
+async function cmd(serial, action, payload = 'PRESS', okText) {
+  const c = cards[serial]; if (!c || !c.data.cmd_topic) return;
+  const r = await callService('mqtt', 'publish', { topic: `${c.data.cmd_topic}/${action}`, payload: String(payload) });
+  r.success ? toast(okText || 'Befehl gesendet') : toast('Fehler: ' + (r.error?.message || 'unbekannt'), true);
+}
+
+// ------------------------------------------------------------------ render
+function queueRender() { if (!renderQueued) { renderQueued = true; requestAnimationFrame(render); } }
+
+function render() {
+  renderQueued = false;
+  for (const [id, e] of Object.entries(entities)) {
+    if (id.startsWith('sensor.') && e.attributes.bambu_bridge && e.attributes.serial) statusToSerial[id] = e.attributes.serial;
+  }
+  const serials = [...new Set(Object.values(statusToSerial))];
+  $('#empty').style.display = serials.length ? 'none' : '';
+  for (const [statusId, serial] of Object.entries(statusToSerial)) {
+    const e = entities[statusId];
+    let c = cards[serial];
+    if (!c) { c = cards[serial] = { el: buildCard(serial), data: {} }; $('#main').appendChild(c.el); }
+    if (e && e.attributes.bambu_bridge) c.data = { ...e.attributes };
+    c.available = !!e && e.state !== 'unavailable';
+    c.cameraId = Object.keys(entities).find(id => id.startsWith('camera.') && entities[id].attributes.bambu_serial === serial);
+    updateCard(c);
+  }
+}
+
+const SPEEDS = [[1, 'Leise'], [2, 'Standard'], [3, 'Sport'], [4, 'Ludicrous']];
+
+function buildCard(serial) {
+  const el = document.createElement('section');
+  el.className = 'printer';
+  el.innerHTML = `
+    <div class="p-head">
+      <div><h2 data-f="name">Drucker</h2><div class="model" data-f="model"></div></div>
+      <span class="pill" data-f="pill">–</span>
+      <div class="meta"><span data-f="wifi"></span><span data-f="filament"></span></div>
+    </div>
+    <div class="p-body">
+      <div class="cam" data-f="cam">
+        <img alt="Kamerabild" data-f="img">
+        <div class="noimg" data-f="noimg">Kein Kamerabild</div>
+        <span class="age" data-f="age" hidden></span>
+        <div class="ovl">
+          <button data-a="light">💡 Licht</button>
+          <button data-a="full" title="Vollbild">⛶</button>
+        </div>
+      </div>
+      <div class="side">
+        <div class="job">
+          <div class="ring">
+            <svg width="118" height="118" viewBox="0 0 118 118">
+              <circle cx="59" cy="59" r="52" stroke="var(--panel2)" stroke-width="10" fill="none"/>
+              <circle data-f="arc" cx="59" cy="59" r="52" stroke="var(--accent)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" style="transition:stroke-dashoffset .6s"/>
+            </svg>
+            <div class="val"><div><span data-f="pct">0</span><small>%</small></div></div>
+          </div>
+          <div class="jobinfo">
+            <div class="file" data-f="file">Kein Druckauftrag</div>
+            <div class="kv">Schicht <b data-f="layer">–</b></div>
+            <div class="kv">Restzeit <b data-f="remain">–</b></div>
+            <div class="kv">Fertig um <b data-f="eta">–</b></div>
+          </div>
+        </div>
+        <div class="tiles">
+          <div class="tile" data-f="tNozzle"><div class="lbl">Düse</div><div class="big"><span data-f="nozzle">–</span><small data-f="nozzleT"></small></div></div>
+          <div class="tile" data-f="tBed"><div class="lbl">Druckbett</div><div class="big"><span data-f="bed">–</span><small data-f="bedT"></small></div></div>
+          <div class="tile" data-f="tChamber" hidden><div class="lbl">Bauraum</div><div class="big"><span data-f="chamber">–</span></div></div>
+        </div>
+        <div class="fans">
+          <div class="fan"><span>Bauteillüfter</span><div class="bar"><i data-f="fPart"></i></div><span data-f="fPartV">–</span></div>
+          <div class="fan"><span>Hilfslüfter</span><div class="bar"><i data-f="fAux"></i></div><span data-f="fAuxV">–</span></div>
+          <div class="fan"><span>Kammerlüfter</span><div class="bar"><i data-f="fCh"></i></div><span data-f="fChV">–</span></div>
+        </div>
+        <div class="controls">
+          <div class="seg">${SPEEDS.map(([l, n]) => `<button data-a="speed" data-v="${l}">${n}</button>`).join('')}</div>
+          <div class="btns">
+            <button class="btn primary" data-a="pauseResume">❚❚ Pausieren</button>
+            <button class="btn danger" data-a="stop">Stoppen</button>
+            <button class="btn" data-a="refresh" title="Status neu laden">⟳</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="section" data-f="amsSec"><h3>AMS <span class="sub" data-f="amsEnv"></span></h3><div class="ams" data-f="ams"></div></div>
+    <div class="section" data-f="hmsSec" hidden><h3>Meldungen</h3><div class="hms" data-f="hms"></div></div>`;
+  el.addEventListener('click', ev => onAction(serial, ev));
+  return el;
+}
+
+function onAction(serial, ev) {
+  const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
+  const c = cards[serial], d = c.data, a = b.dataset.a;
+  if (a === 'light') cmd(serial, 'light', d.light === 'on' ? 'OFF' : 'ON', d.light === 'on' ? 'Licht aus' : 'Licht an');
+  else if (a === 'speed') cmd(serial, 'speed', b.dataset.v, 'Geschwindigkeit: ' + SPEEDS[b.dataset.v - 1][1]);
+  else if (a === 'refresh') cmd(serial, 'refresh', 'PRESS', 'Status wird aktualisiert');
+  else if (a === 'pauseResume') d.gcode_state === 'PAUSE' ? cmd(serial, 'resume', 'PRESS', 'Druck wird fortgesetzt') : cmd(serial, 'pause', 'PRESS', 'Druck wird pausiert');
+  else if (a === 'stop') {
+    if (!b.classList.contains('confirm')) {
+      b.classList.add('confirm'); b.textContent = 'Wirklich stoppen?';
+      clearTimeout(b._h); b._h = setTimeout(() => { b.classList.remove('confirm'); b.textContent = 'Stoppen'; }, 4000);
+    } else {
+      clearTimeout(b._h); b.classList.remove('confirm'); b.textContent = 'Stoppen';
+      cmd(serial, 'stop', 'PRESS', 'Druck wird gestoppt');
+    }
+  } else if (a === 'full') {
+    const cam = $('[data-f="cam"]', c.el);
+    document.fullscreenElement ? document.exitFullscreen() : cam.requestFullscreen?.();
+  }
+}
+
+const fmtMin = m => { if (!m) return '–'; const h = Math.floor(m / 60), mm = m % 60; return h ? `${h} h ${String(mm).padStart(2, '0')} min` : `${mm} min`; };
+function fmtEta(iso) {
+  if (!iso) return '–';
+  const d = new Date(iso), now = new Date();
+  const t = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const days = Math.round((new Date(d.toDateString()) - new Date(now.toDateString())) / 864e5);
+  return days === 0 ? t : days === 1 ? 'morgen ' + t : d.toLocaleDateString('de-DE', { weekday: 'short' }) + ' ' + t;
+}
+const temp = v => v == null ? '–' : (Math.round(v * 10) / 10).toLocaleString('de-DE') + '°';
+
+function updateCard(c) {
+  const d = c.data, f = n => $(`[data-f="${n}"]`, c.el);
+  const gs = d.gcode_state || 'UNKNOWN';
+  c.el.classList.toggle('offline', !c.available);
+
+  f('name').textContent = d.name || 'Drucker';
+  f('model').textContent = [d.model, d.serial].filter(Boolean).join(' · ');
+  const pill = f('pill');
+  pill.textContent = c.available ? (d.status || '–') + ((d.hms || []).length ? ' ⚠' : '') : 'Offline';
+  pill.className = 'pill ' + (!c.available || gs === 'FAILED' ? 'err'
+    : gs === 'RUNNING' || gs === 'PREPARE' ? 'run' : gs === 'PAUSE' ? 'pause' : gs === 'FINISH' ? 'done' : '');
+  f('wifi').textContent = d.wifi != null ? `📶 ${d.wifi} dBm` : '';
+  f('filament').textContent = d.active_filament && d.active_filament !== '—' ? '🧵 ' + d.active_filament : '';
+
+  const pct = Math.max(0, Math.min(100, d.progress || 0));
+  f('pct').textContent = pct;
+  f('arc').style.strokeDashoffset = 326.7 * (1 - pct / 100);
+  f('arc').style.stroke = gs === 'PAUSE' ? 'var(--warn)' : gs === 'FAILED' ? 'var(--err)' : gs === 'FINISH' ? 'var(--info)' : 'var(--accent)';
+  f('file').textContent = d.file || 'Kein Druckauftrag';
+  f('file').title = d.file || '';
+  f('layer').textContent = d.total_layers ? `${d.layer ?? 0} / ${d.total_layers}` : '–';
+  f('remain').textContent = d.printing ? fmtMin(d.remaining_min) : '–';
+  f('eta').textContent = d.printing ? fmtEta(d.end_time) : '–';
+
+  f('nozzle').textContent = temp(d.nozzle_temp);
+  f('nozzleT').textContent = d.nozzle_target ? ` / ${d.nozzle_target}°` : '';
+  if ((d.nozzles || []).length > 1) {   // H2D/H2C: zwei Düsen (0 = rechts, 1 = links)
+    f('nozzle').innerHTML = d.nozzles.map((n, i) =>
+      `<span class="nz"><small>${i === 0 ? 'R' : 'L'}</small>${esc(temp(n.temp))}${n.target ? `<small> / ${esc(n.target)}°</small>` : ''}</span>`).join('');
+    f('nozzleT').textContent = '';
+  }
+  f('tChamber').hidden = d.chamber_temp == null;
+  f('chamber').textContent = temp(d.chamber_temp);
+  f('bed').textContent = temp(d.bed_temp);
+  f('bedT').textContent = d.bed_target ? ` / ${d.bed_target}°` : '';
+  f('tNozzle').classList.toggle('hot', (d.nozzle_temp || 0) > 50);
+  f('tBed').classList.toggle('hot', (d.bed_temp || 0) > 45);
+
+  for (const [k, n] of [['fan_part', 'fPart'], ['fan_aux', 'fAux'], ['fan_chamber', 'fCh']]) {
+    f(n).style.width = (d[k] || 0) + '%';
+    f(n + 'V').textContent = d[k] == null ? '–' : d[k] + '%';
+  }
+
+  const active = ['RUNNING', 'PREPARE', 'PAUSE'].includes(gs);
+  c.el.querySelectorAll('[data-a="speed"]').forEach(b => {
+    b.classList.toggle('on', +b.dataset.v === d.speed_level);
+    b.disabled = !c.available || !active;
+  });
+  const pr = $('[data-a="pauseResume"]', c.el);
+  pr.textContent = gs === 'PAUSE' ? '▶ Fortsetzen' : '❚❚ Pausieren';
+  pr.disabled = !c.available || !active;
+  $('[data-a="stop"]', c.el).disabled = !c.available || !active;
+  $('[data-a="refresh"]', c.el).disabled = !c.available;
+  const lb = $('[data-a="light"]', c.el);
+  lb.classList.toggle('lit', d.light === 'on');
+  lb.disabled = !c.available;
+
+  // AMS
+  const units = d.ams || [];
+  const slots = [];
+  units.forEach(u => (u.trays || []).forEach(t => slots.push({ ...t,
+    label: units.length > 1 || u.id >= 128 ? `${u.label || 'AMS ' + (u.id + 1)} · Slot ${t.slot}` : `Slot ${t.slot}` })));
+  if (d.external_spool) slots.push({ ...d.external_spool, label: 'Extern' });
+  f('amsSec').hidden = !slots.length;
+  const u0 = units[0];
+  f('amsEnv').textContent = u0 ? [u0.humidity != null ? `💧 ${u0.humidity} %` : u0.humidity_level != null ? `💧 Stufe ${u0.humidity_level}/5` : '',
+                                   u0.temp ? `🌡 ${temp(u0.temp)}` : ''].filter(Boolean).join('   ') : '';
+  const amsHtml = slots.map(t => `
+    <div class="slot${t.active ? ' active' : ''}" title="${esc(t.label)}">
+      <div class="sw${t.empty ? ' none' : ''}" style="${t.color && !t.empty ? 'background:' + esc(t.color) : ''}"></div>
+      <div class="t">${t.empty ? 'Leer' : esc(t.type)}</div>
+      <div class="b">${esc(t.label)}${t.brand ? ' · ' + esc(t.brand) : ''}</div>
+      ${t.remain != null && !t.empty ? `<div class="bar"><i style="width:${+t.remain}%"></i></div>` : ''}
+    </div>`).join('');
+  if (f('ams')._html !== amsHtml) { f('ams').innerHTML = amsHtml; f('ams')._html = amsHtml; }
+
+  // HMS
+  const errs = (d.hms || []).map(h => `<a href="${esc(h.url)}" target="_blank" rel="noopener">⚠️ HMS ${esc(h.code)} – im Bambu-Wiki öffnen</a>`);
+  if (d.print_error) errs.push(`<a href="https://wiki.bambulab.com" target="_blank" rel="noopener">⚠️ Druckfehler ${esc(d.print_error)}</a>`);
+  f('hmsSec').hidden = !errs.length;
+  const hmsHtml = errs.join('');
+  if (f('hms')._html !== hmsHtml) { f('hms').innerHTML = hmsHtml; f('hms')._html = hmsHtml; }
+}
+
+// ------------------------------------------------------------------ camera (über HA camera_proxy)
+function refreshCameras() {
+  if (document.hidden) return;
+  for (const c of Object.values(cards)) {
+    const cam = c.cameraId && entities[c.cameraId];
+    const img = $('[data-f="img"]', c.el), no = $('[data-f="noimg"]', c.el), age = $('[data-f="age"]', c.el);
+    if (!cam || !cam.attributes.entity_picture || !c.available || cam.state === 'unavailable') {
+      img.classList.remove('on'); no.style.display = ''; no.textContent = c.available ? 'Kein Kamerabild' : 'Drucker offline'; age.hidden = true; continue;
+    }
+    if (c._loading) continue;
+    c._loading = true;
+    const pic = cam.attributes.entity_picture;
+    const pre = new Image();
+    pre.onload = () => { img.src = pre.src; img.classList.add('on'); no.style.display = 'none'; c._loading = false; c._camTs = Date.now(); age.hidden = true; };
+    pre.onerror = () => { c._loading = false; if (c._camTs && Date.now() - c._camTs > 15000) { age.hidden = false; age.textContent = 'Bild veraltet'; } };
+    pre.src = hassUrl() + pic + (pic.includes('?') ? '&' : '?') + '_=' + Date.now();
+  }
+}
+setInterval(refreshCameras, CAM_REFRESH_MS);
+setInterval(queueRender, 30000); // "Fertig um" (heute/morgen) aktuell halten
+
+// ------------------------------------------------------------------ settings
+function openSettings() {
+  $('#inUrl').value = lsGet(LS.url) || location.origin;
+  $('#inToken').value = lsGet(LS.token) || '';
+  $('#modal').classList.add('open');
+}
+$('#btnSettings').onclick = openSettings;
+$('#btnCancel').onclick = () => $('#modal').classList.remove('open');
+$('#btnSave').onclick = () => {
+  const url = $('#inUrl').value.trim().replace(/\/$/, '');
+  lsSet(LS.url, url && url !== location.origin ? url : '');
+  lsSet(LS.token, $('#inToken').value.trim());
+  $('#modal').classList.remove('open');
+  if (ws) { ws.onclose = null; ws.close(); }
+  connect();
+};
+
+connect();
+})();
+</script>
+</body>
+</html>

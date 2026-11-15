@@ -1,0 +1,21 @@
+[Unit]
+Description=MexMox Bambu Bridge (P1S -> Home Assistant)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bambu
+WorkingDirectory=/opt/bambu-bridge
+Environment=BAMBU_CONFIG=/opt/bambu-bridge/config.yaml
+ExecStart=/opt/bambu-bridge/venv/bin/python /opt/bambu-bridge/bridge.py
+StateDirectory=bambu-bridge
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/opt/bambu-bridge
+
+[Install]
+WantedBy=multi-user.target

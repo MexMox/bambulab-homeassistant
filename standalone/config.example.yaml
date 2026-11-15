@@ -1,0 +1,44 @@
+# MexMox Bambu Bridge – Konfiguration
+# Kopieren nach config.yaml und Werte anpassen.
+
+log_level: INFO            # DEBUG zeigt jeden Befehl an den Drucker
+# data_dir: /var/lib/bambu-bridge   # Speicherort "Letzter Druck" (Standard: automatisch)
+
+homeassistant:
+  host: 192.168.1.10       # IP von Home Assistant (Mosquitto-Add-on)
+  port: 1883
+  username: bambu          # HA-Benutzer für MQTT (siehe README)
+  password: "CHANGE_ME"
+  discovery_prefix: homeassistant
+  base_topic: bambu
+  # legacy_object_id: true # nur für HA älter als 2025.10
+
+printers:
+  - name: P1S
+    # Modell: P1S, P1P, A1, A1MINI, X1, X1C, X1E, P2S, H2S, H2D, H2DPRO, H2C
+    # (unbekannt/leer = Kamera-Typ wird per Port-Test erkannt)
+    model: P1S
+    # camera_mode: auto            # auto | chamber (P1/A1, Port 6000) | rtsp (X1/H2/P2, Port 322, braucht ffmpeg)
+    host: 192.168.1.50             # feste IP des Druckers (DHCP-Reservierung im Router!)
+    serial: "01P00A000000000"      # Drucker-Display: Einstellungen -> Gerät
+    access_code: "12345678"        # Drucker-Display: Einstellungen -> WLAN/LAN -> Access Code
+    camera: true                   # Kamerabild (Port 6000) an HA weitergeben
+    camera_interval: 2             # Sekunden zwischen Kamerabildern an HA
+    pushall_interval: 300          # Vollständiger Status-Abgleich (nicht < 60 s, P1 ruckelt sonst)
+    allow_gcode: false             # rohe G-Code-Befehle erlauben (Vorsicht!)
+    preview: true                  # 3D-Vorschau (Slicer-Bild) beim Druckstart per FTPS vom Drucker holen
+    last_print_delay: 5           # Sekunden nach Druckende bis zum Screenshot "Letzter Druck"
+    last_print_light: false        # für den Screenshot kurz das Kammerlicht einschalten (Developer Mode nötig)
+
+  # Zweiter Drucker? Einfach weiteren Block anhängen:
+  # - name: P1S Werkstatt
+  #   host: 192.168.1.51
+  #   serial: "01P00A000000001"
+  #   access_code: "87654321"
+
+# Optional: eigener MJPEG-Stream ohne HA (z. B. für OBS / Browser)
+# http://<bridge-ip>:8099/p1s/stream.mjpg  |  /p1s/snapshot.jpg  |  /health
+http:
+  enabled: false
+  bind: 0.0.0.0
+  port: 8099

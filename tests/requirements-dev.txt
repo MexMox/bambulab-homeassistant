@@ -1,0 +1,6 @@
+-r ../bambu_bridge/requirements.txt
+pytest>=8
+# nur für den Integrationstest:
+pyftpdlib>=1.5
+pyopenssl>=24
+websockets>=12

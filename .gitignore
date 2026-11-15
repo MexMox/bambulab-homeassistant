@@ -1,0 +1,19 @@
+# Zugangsdaten – niemals hochladen!
+bridge/config.yaml
+*.env
+
+# Laufzeitdaten der Bridge (Letzter Druck, 3D-Vorschau)
+data/
+*.tmp
+
+# Python / Tools
+__pycache__/
+*.pyc
+venv/
+.venv/
+.ruff_cache/
+
+# System
+.DS_Store
+Thumbs.db
+.vscode/

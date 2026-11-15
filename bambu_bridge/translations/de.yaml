@@ -1,0 +1,25 @@
+configuration:
+  log_level:
+    name: Log-Level
+    description: Ausführlichkeit des Protokolls. "debug" zeigt jeden Befehl an den Drucker.
+  install_card:
+    name: Dashboard-Karte automatisch einrichten
+    description: >-
+      Kopiert die Karte nach /config/www/bambu und trägt sie als Dashboard-Ressource ein.
+      Danach im Dashboard "Karte hinzufügen → MexMox Bambu Drucker".
+  printers:
+    name: Drucker
+    description: >-
+      Je Drucker: name, model (P1S, P1P, A1, A1MINI, X1, X1C, X1E, P2S, H2S, H2D, H2DPRO, H2C, OTHER),
+      host (feste IP), serial (Display → Einstellungen → Gerät) und access_code (Display → WLAN/LAN).
+      Optional: camera, camera_mode (auto/chamber/rtsp), preview (3D-Vorschau), last_print_light,
+      last_print_delay, camera_interval, pushall_interval, allow_gcode.
+  mqtt_host:
+    name: MQTT-Host (optional)
+    description: Nur ausfüllen, wenn nicht das Mosquitto-Add-on genutzt wird.
+  mqtt_port:
+    name: MQTT-Port (optional)
+  mqtt_username:
+    name: MQTT-Benutzer (optional)
+  mqtt_password:
+    name: MQTT-Passwort (optional)

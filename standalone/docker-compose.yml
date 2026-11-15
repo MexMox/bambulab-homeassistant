@@ -1,0 +1,16 @@
+services:
+  bambu-bridge:
+    build:
+      context: ../bambu_bridge          # gemeinsamer Code mit dem Add-on
+      dockerfile: ../standalone/Dockerfile
+    container_name: bambu-bridge
+    restart: unless-stopped
+    network_mode: host        # direkter LAN-Zugriff auf Drucker (8883/6000) und HA
+    volumes:
+      - ./config.yaml:/config/config.yaml:ro
+      - bambu-data:/data      # "Letzter Druck" (Bild + Infos) bleibt über Neustarts erhalten
+    environment:
+      - TZ=Europe/Berlin
+
+volumes:
+  bambu-data:
