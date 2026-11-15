@@ -2,6 +2,8 @@
 
 **Bambu-Lab-3D-Drucker lokal in Home Assistant – mit eigener Dashboard-Karte, Kamera, AMS, Steuerung, 3D-Vorschau und „Letzter Druck“. Ohne Cloud, ohne HACS.**
 
+> ✅ **Optimiert und getestet mit dem Bambu Lab P1S** (mit AMS, Home Assistant OS 2026.11). Die anderen Serien (P1P, A1, X1, P2S, H2) werden unterstützt und sind mit simulierten Druckern getestet. Siehe [Unterstützte Drucker](#unterstützte-drucker).
+
 ![Dashboard-Karte während eines Drucks](docs/images/card-printing.png)
 
 | H2D mit zwei Düsen, Bauraum und AMS HT | Drucker aus: 3D-Vorschau vom letzten Druck |
@@ -54,7 +56,7 @@
 
 | Serie | Modelle (`model`) | Kamera | Bauraum-Temperatur | Besonderheiten |
 |---|---|---|---|---|
-| **P1** | `P1S`, `P1P` | Port 6000 (JPEG über TLS) | – | – |
+| **P1** | `P1S` ✅, `P1P` | Port 6000 (JPEG über TLS) | – | **P1S: optimiert und mit echtem Gerät getestet** |
 | **A1** | `A1`, `A1MINI` | Port 6000 (JPEG über TLS) | – | AMS Lite ohne Feuchtesensor (wird ausgeblendet) |
 | **X1** | `X1`, `X1C`, `X1E` | RTSPS Port 322 (über ffmpeg) | ✅ | – |
 | **P2** | `P2S` | RTSPS Port 322 (über ffmpeg) | – | – |
@@ -63,7 +65,11 @@
 
 Status, Steuerung und Vorschau laufen bei allen Modellen über dieselben Schnittstellen: MQTT (Port 8883) und FTPS (Port 990). Unterschiedlich ist nur der Weg, über den die Kamera ihr Bild liefert.
 
-**Teststand:** Alle Serien sind mit simulierten Druckern automatisch getestet (siehe [Entwicklung und Tests](#entwicklung-und-tests)). Mit einem echten Gerät erprobt ist der P1S. Rückmeldungen zu anderen Modellen sind sehr willkommen, gern als Issue.
+**Teststand:**
+- ✅ **P1S:** optimiert und mit echtem Gerät getestet. Geprüft sind Status, Kamera, AMS, Steuerung, 3D-Vorschau, „Letzter Druck“, Dashboard-Karte und die Installation als App auf einer frischen Home-Assistant-OS-Installation.
+- 🧪 **Alle anderen Modelle:** mit simulierten Druckern automatisch getestet (siehe [Entwicklung und Tests](#entwicklung-und-tests)), mit echter Hardware noch nicht erprobt.
+
+Rückmeldungen zu anderen Modellen sind sehr willkommen, gern als Issue.
 
 ## So funktioniert es
 
