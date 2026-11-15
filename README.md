@@ -109,7 +109,7 @@ Status, Steuerung und Vorschau laufen bei allen Modellen über dieselben Schnitt
 
 1. *Einstellungen → Add-ons → Add-on-Store → ⋮ (oben rechts) → Repositories* öffnen, diese URL einfügen und **Hinzufügen** klicken:
    ```
-   https://github.com/DEIN-GITHUB-NAME/bambu-p1s-homeassistant
+   https://github.com/MexMox/bambulab-homeassistant
    ```
 2. **„Bambu Lab Bridge“** öffnen und **Installieren** klicken. Der erste Build dauert ein paar Minuten.
 3. Im Tab **Konfiguration** den Drucker eintragen: `model`, `host` (IP), `serial`, `access_code`. Dann **Speichern**.
@@ -133,7 +133,7 @@ Für HA Container/Core oder wenn die Bridge auf einem eigenen Server laufen soll
 
 ### Variante A: systemd (Debian/Ubuntu, empfohlen)
 ```bash
-git clone https://github.com/DEIN-GITHUB-NAME/bambu-p1s-homeassistant.git
+git clone https://github.com/MexMox/bambulab-homeassistant.git
 cd bambu-p1s-homeassistant/standalone
 sudo bash install.sh                       # installiert nach /opt/bambu-bridge (inkl. ffmpeg)
 sudo nano /opt/bambu-bridge/config.yaml    # Drucker + MQTT-Zugang eintragen
