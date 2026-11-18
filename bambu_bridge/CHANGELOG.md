@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.3
+- Dashboard in der Seitenleiste: Ausgeschaltete Drucker werden jetzt angezeigt (bisher „Warte auf Daten …“), mit 3D-Vorschau bzw. Foto vom letzten Druck und Infoband – wie in der Dashboard-Karte
+- Licht-Taste wird bei ausgeschaltetem Drucker ausgeblendet
+
 ## 1.5.2
 - Legt die App den Ordner `/config/www` neu an, erscheint in Home Assistant eine Benachrichtigung „bitte neu starten“ (sonst fehlt die Karte)
 - Doku: Begriff „Apps“ statt „Add-ons“ (HA 2026.2), Hinweis auf App-Store statt Marketplace, Neustart-Hinweis als eigener Warnkasten

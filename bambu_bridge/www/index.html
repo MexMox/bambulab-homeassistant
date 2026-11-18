@@ -41,13 +41,19 @@ main{padding:20px;display:grid;gap:20px;max-width:1500px;margin:0 auto}
 @media (max-width:900px){.p-body{grid-template-columns:1fr}}
 
 .cam{position:relative;background:#000;aspect-ratio:16/9;display:grid;place-items:center;overflow:hidden}
-.cam img{width:100%;height:100%;object-fit:contain;display:none}
+.cam img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none}
 .cam img.on{display:block}
 .cam .noimg{color:var(--muted);font-size:14px}
 .cam .ovl{position:absolute;right:10px;bottom:10px;display:flex;gap:8px}
 .cam .ovl button{background:rgba(0,0,0,.6);backdrop-filter:blur(4px);padding:7px 11px;border-radius:10px;font-size:13px}
 .cam .ovl button.lit{color:#fde047}
 .cam .age{position:absolute;left:10px;bottom:10px;font-size:11.5px;color:#cbd5e1;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:8px}
+.cam.preview{background:radial-gradient(ellipse at 50% 60%,#3a3f4a 0%,#1d2027 70%)}
+.cam.preview img{padding:52px 16px 12px;box-sizing:border-box;filter:drop-shadow(0 10px 18px rgba(0,0,0,.45))}
+.lastbadge{position:absolute;left:10px;top:10px;right:10px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+.lastbadge span{background:rgba(0,0,0,.65);backdrop-filter:blur(4px);color:#fff;padding:5px 10px;border-radius:9px;font-size:13px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lastbadge .ok{color:#4ade80;font-weight:650}.lastbadge .bad{color:#f87171;font-weight:650}.lastbadge .mid{color:#fbbf24;font-weight:650}
+.lastbadge .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;border:1px solid rgba(255,255,255,.4)}
 
 .side{padding:18px;display:grid;gap:16px;align-content:start}
 .job{display:flex;gap:18px;align-items:center}
@@ -115,7 +121,7 @@ main{padding:20px;display:grid;gap:20px;max-width:1500px;margin:0 auto}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;opacity:0;transition:.25s;z-index:30;font-size:14px;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%)}
 .toast.err{border-color:var(--err);color:#fca5a5}
-.offline .p-body,.offline .section{opacity:.45}
+.offline .side,.offline .section{opacity:.45}
 </style>
 </head>
 <body>
@@ -267,15 +273,29 @@ function render() {
   for (const [id, e] of Object.entries(entities)) {
     if (id.startsWith('sensor.') && e.attributes.bambu_bridge && e.attributes.serial) statusToSerial[id] = e.attributes.serial;
   }
+  // Drucker aus: Der Statussensor ist dann "unavailable" ohne Attribute. Die Kameras
+  // "3D-Vorschau" und "Letzter Druck" bleiben aber verfügbar und verraten Seriennummer + Slug.
+  for (const [id, e] of Object.entries(entities)) {
+    const a = e.attributes;
+    if (!id.startsWith('camera.') || !a.bambu_serial || !['preview', 'last_print'].includes(a.bambu_role)) continue;
+    if (Object.values(statusToSerial).includes(a.bambu_serial)) continue;
+    statusToSerial[a.bambu_slug ? `sensor.bambu_${a.bambu_slug}_status` : `__offline_${a.bambu_serial}`] = a.bambu_serial;
+  }
   const serials = [...new Set(Object.values(statusToSerial))];
   $('#empty').style.display = serials.length ? 'none' : '';
+  const camBy = (serial, role) => Object.keys(entities).find(id => id.startsWith('camera.')
+    && entities[id].attributes.bambu_serial === serial && (entities[id].attributes.bambu_role || 'live') === role);
   for (const [statusId, serial] of Object.entries(statusToSerial)) {
     const e = entities[statusId];
     let c = cards[serial];
     if (!c) { c = cards[serial] = { el: buildCard(serial), data: {} }; $('#main').appendChild(c.el); }
     if (e && e.attributes.bambu_bridge) c.data = { ...e.attributes };
     c.available = !!e && e.state !== 'unavailable';
-    c.cameraId = Object.keys(entities).find(id => id.startsWith('camera.') && entities[id].attributes.bambu_serial === serial);
+    c.cameraId = camBy(serial, 'live');
+    c.previewId = camBy(serial, 'preview');
+    c.lastId = camBy(serial, 'last_print');
+    const off = entities[c.previewId] || entities[c.lastId];
+    c.offlineName = off?.attributes?.printer_name;
     updateCard(c);
   }
 }
@@ -296,6 +316,7 @@ function buildCard(serial) {
         <img alt="Kamerabild" data-f="img">
         <div class="noimg" data-f="noimg">Kein Kamerabild</div>
         <span class="age" data-f="age" hidden></span>
+        <div class="lastbadge" data-f="lastBadge" hidden></div>
         <div class="ovl">
           <button data-a="light">💡 Licht</button>
           <button data-a="full" title="Vollbild">⛶</button>
@@ -379,7 +400,7 @@ function updateCard(c) {
   const gs = d.gcode_state || 'UNKNOWN';
   c.el.classList.toggle('offline', !c.available);
 
-  f('name').textContent = d.name || 'Drucker';
+  f('name').textContent = d.name || c.offlineName || 'Drucker';
   f('model').textContent = [d.model, d.serial].filter(Boolean).join(' · ');
   const pill = f('pill');
   pill.textContent = c.available ? (d.status || '–') + ((d.hms || []).length ? ' ⚠' : '') : 'Offline';
@@ -430,6 +451,7 @@ function updateCard(c) {
   const lb = $('[data-a="light"]', c.el);
   lb.classList.toggle('lit', d.light === 'on');
   lb.disabled = !c.available;
+  lb.hidden = !c.available;   // Drucker aus: kein Licht schaltbar
 
   // AMS
   const units = d.ams || [];
@@ -464,15 +486,41 @@ function refreshCameras() {
   for (const c of Object.values(cards)) {
     const cam = c.cameraId && entities[c.cameraId];
     const img = $('[data-f="img"]', c.el), no = $('[data-f="noimg"]', c.el), age = $('[data-f="age"]', c.el);
-    if (!cam || !cam.attributes.entity_picture || !c.available || cam.state === 'unavailable') {
+    const badge = $('[data-f="lastBadge"]', c.el), box = $('[data-f="cam"]', c.el);
+    const ok = s => s && s.state !== 'unavailable' && s.attributes.entity_picture;
+    let src = c.available && ok(cam) ? cam : null, mode = null;
+    if (!src) {   // Drucker aus: 3D-Vorschau, sonst Foto vom letzten Druck
+      const pv = entities[c.previewId], lp = entities[c.lastId];
+      if (ok(pv)) { src = pv; mode = 'preview'; } else if (ok(lp)) { src = lp; mode = 'shot'; }
+      if (mode) {
+        const a = src.attributes;
+        const lpa = mode === 'shot' ? a : (lp && (!a.file || lp.attributes.file === a.file) ? lp.attributes : null);
+        const parts = [`<span>${mode === 'preview' ? '🧊 3D-Vorschau' : '🕓 Letzter Druck'}</span>`];
+        if (lpa?.result) parts.push(`<span class="${lpa.result === 'Fertig' ? 'ok' : lpa.result === 'Fehlgeschlagen' ? 'bad' : 'mid'}">${esc(lpa.result)}</span>`);
+        if (lpa?.finished_at) parts.push(`<span>${esc(new Date(lpa.finished_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }))} Uhr</span>`);
+        if (a.file) parts.push(`<span title="${esc(a.file)}">${esc(a.file)}</span>`);
+        if (lpa?.duration_min) parts.push(`<span>⏱ ${esc(fmtMin(lpa.duration_min))}</span>`);
+        else if (a.prediction_min) parts.push(`<span>⏱ ca. ${esc(fmtMin(a.prediction_min))}</span>`);
+        if (a.weight_g) parts.push(`<span>⚖ ${esc(String(a.weight_g).replace('.', ','))} g</span>`);
+        (a.filaments || []).forEach(fl => parts.push(`<span><i class="dot" style="background:${esc(fl.color || '#888')}"></i>${esc(fl.type || '')}${fl.used_g ? ' · ' + Math.round(fl.used_g) + ' g' : ''}</span>`));
+        const html = parts.join('');
+        if (badge._html !== html) { badge.innerHTML = html; badge._html = html; }
+      }
+    }
+    badge.hidden = !mode;
+    box.classList.toggle('preview', mode === 'preview');
+    if (!src) {
       img.classList.remove('on'); no.style.display = ''; no.textContent = c.available ? 'Kein Kamerabild' : 'Drucker offline'; age.hidden = true; continue;
     }
+    // Offline-Bilder ändern sich selten: nur neu laden, wenn sich die Quelle ändert
+    if (mode && c._offSrc === src.attributes.entity_picture && img.classList.contains('on')) continue;
     if (c._loading) continue;
     c._loading = true;
-    const pic = cam.attributes.entity_picture;
+    const pic = src.attributes.entity_picture;
+    c._offSrc = mode ? pic : null;
     const pre = new Image();
     pre.onload = () => { img.src = pre.src; img.classList.add('on'); no.style.display = 'none'; c._loading = false; c._camTs = Date.now(); age.hidden = true; };
-    pre.onerror = () => { c._loading = false; if (c._camTs && Date.now() - c._camTs > 15000) { age.hidden = false; age.textContent = 'Bild veraltet'; } };
+    pre.onerror = () => { c._loading = false; c._offSrc = null; if (!mode && c._camTs && Date.now() - c._camTs > 15000) { age.hidden = false; age.textContent = 'Bild veraltet'; } };
     pre.src = hassUrl() + pic + (pic.includes('?') ? '&' : '?') + '_=' + Date.now();
   }
 }
